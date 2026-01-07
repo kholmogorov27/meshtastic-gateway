@@ -1,0 +1,10 @@
+[Unit]
+Description=TCP Socket for Meshtastic Gateway
+
+[Socket]
+ListenStream=$LISTEN_PORT
+Accept=yes
+Service=tcp-to-meshtastic@.service
+
+[Install]
+WantedBy=sockets.target

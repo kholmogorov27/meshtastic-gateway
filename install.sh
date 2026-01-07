@@ -25,71 +25,15 @@ sudo -u "$USER" -H bash -c 'pipx install meshtastic --force'
 
 # --- Create TCP→Meshtastic script ---
 echo "[+] Creating script $SCRIPT_PATH..."
-sudo tee "$SCRIPT_PATH" >/dev/null <<EOF
-#!/usr/bin/env bash
-
-MESHTASTIC_CMD="$HOME_DIR/.local/bin/meshtastic"
-MESHTASTIC_ARGS="--sendtext"
-
-# Read one line per TCP connection, then exit
-if IFS= read -r MESSAGE; then
-    # Empty message → consider it "ignored" but successful
-    [[ -z "\$MESSAGE" ]] && { echo "No message received"; exit 0; }
-
-    echo "Received: \$MESSAGE"
-
-    # Send message via Meshtastic
-    if "\$MESHTASTIC_CMD" \$MESHTASTIC_ARGS "\$MESSAGE"; then
-        echo "Message sent successfully"
-        exit 0  # Success
-    else
-        echo "Failed to send message" >&2
-        exit 1  # Failure
-    fi
-else
-    echo "No input received" >&2
-    exit 2  # Read failed
-fi
-EOF
-
-sudo chmod +x "$SCRIPT_PATH"
+sudo install -m 0755 ./tcp_to_meshtastic.sh "$SCRIPT_PATH"
 
 # --- Create systemd service unit ---
 echo "[+] Creating systemd service unit $SERVICE_UNIT..."
-sudo tee "$SERVICE_UNIT" >/dev/null <<EOF
-[Unit]
-Description=TCP to Meshtastic Gateway (connection %i)
-After=network.target
-
-[Service]
-Type=simple
-User=$USER
-Environment="PATH=$HOME_DIR/.local/bin:/usr/local/bin:/usr/bin"
-ExecStart=$SCRIPT_PATH
-StandardInput=socket
-StandardOutput=socket
-StandardError=journal
-NoNewPrivileges=true
-ProtectSystem=full
-ProtectHome=read-only
-PrivateTmp=true
-BindReadOnlyPaths=$HOME_DIR/.local/bin/meshtastic
-EOF
+sudo install -m 0755 ./tcp-to-meshtastic.service "$SERVICE_UNIT"
 
 # --- Create systemd socket unit ---
 echo "[+] Creating systemd socket unit $SOCKET_UNIT..."
-sudo tee "$SOCKET_UNIT" >/dev/null <<EOF
-[Unit]
-Description=TCP Socket for Meshtastic Gateway
-
-[Socket]
-ListenStream=$LISTEN_PORT
-Accept=yes
-Service=tcp-to-meshtastic@.service
-
-[Install]
-WantedBy=sockets.target
-EOF
+sudo install -m 0755 ./tcp-to-meshtastic.socket "$SOCKET_UNIT"
 
 # --- Enable and start socket ---
 echo "[+] Enabling and starting socket..."

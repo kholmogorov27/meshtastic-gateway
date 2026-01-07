@@ -1,0 +1,17 @@
+[Unit]
+Description=TCP to Meshtastic Gateway (connection %i)
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+Environment="PATH=$HOME_DIR/.local/bin:/usr/local/bin:/usr/bin"
+ExecStart=$SCRIPT_PATH
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+BindReadOnlyPaths=$HOME_DIR/.local/bin/meshtastic
